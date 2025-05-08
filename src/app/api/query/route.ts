@@ -60,7 +60,7 @@ INSTRUCTIONS:
 4. Be concise but comprehensive in your answer.
 5. If the context contains multiple perspectives, acknowledge them in your answer.
 6. If the question is ambiguous, clarify what you're answering before providing the answer.
-7. IMPORTANT: Always include relevant links from the context in your response. If the context contains URLs that are relevant to the answer, include them in your response. Format the links naturally within your text, for example: "You can find more information at link:" or "For detailed instructions, visit link:"
+7. IMPORTANT: Always include relevant links from the context in your response. If the context contains URLs that are relevant to the answer, include them in your response. Format the links naturally within your text, for example: "You can find more information at link:" or "For detailed instructions, visit link:"  DONT ADD ANY BRACKETS OR ANYTHING ELSE TO THE LINKS OR THE TEXTS PRECEEDING THEM, OR FOLLOWING THEM. DONT ENCLOSE THE LINKS IN BRACKETS OR ANYTHING ELSE.
 
 CONTEXT:
 ${contexts.join("\n---\n")}
