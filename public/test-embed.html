@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test University Website</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            background: #003366;
+            color: white;
+            padding: 20px;
+            margin: -20px -20px 20px -20px;
+        }
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .department-nav {
+            background: #f5f5f5;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .department-nav span {
+            display: inline-block;
+            margin-right: 15px;
+            color: #003366;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .department-nav span:hover {
+            text-decoration: underline;
+        }
+        .department-nav span.active {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        #error-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff4444;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        #debug-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 400px;
+            max-height: 200px;
+            overflow: auto;
+            z-index: 10000;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Test University</h1>
+    </div>
+    
+    <div class="content">
+        <div class="department-nav">
+            <span data-department="cs" id="cs-link">Computer Science</span>
+            <span data-department="math" id="math-link">Mathematics</span>
+            <span data-department="physics" id="physics-link">Physics</span>
+            <span data-department="engineering" id="engineering-link">Engineering</span>
+        </div>
+
+        <h2>Welcome to Test University</h2>
+        <p>This is a test page to simulate a university website. The chatbot should appear in the bottom-right corner.</p>
+        <p>Try navigating to different departments using the links above to see how the chatbot adapts to different contexts.</p>
+        
+        <h3>About Our University</h3>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        
+        <h3>Our Departments</h3>
+        <p>We offer a wide range of programs across multiple departments. Each department has its own dedicated resources and support services.</p>
+    </div>
+
+    <div id="error-message"></div>
+    <div id="debug-info"></div>
+
+    <script>
+        // Debug logging
+        function debugLog(message) {
+            const debugInfo = document.getElementById('debug-info');
+            const timestamp = new Date().toLocaleTimeString();
+            debugInfo.innerHTML += `[${timestamp}] ${message}<br>`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        // Function to handle script loading errors
+        function handleScriptError(error) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = 'Error loading chatbot: ' + error.message;
+            debugLog('Error loading chatbot: ' + error.message);
+        }
+
+        // Function to change department
+        function changeDepartment(dept) {
+            debugLog(`Changing department to: ${dept}`);
+            
+            // Update URL without page reload
+            const url = new URL(window.location.href);
+            url.searchParams.set('department', dept);
+            window.history.pushState({}, '', url);
+            debugLog(`URL updated to: ${url.toString()}`);
+            
+            // Update active link
+            updateActiveLink();
+            
+            // Reload the chatbot
+            reloadChatbot();
+        }
+
+        // Function to update active link
+        function updateActiveLink() {
+            const params = new URLSearchParams(window.location.search);
+            const department = params.get('department');
+            debugLog(`Updating active link for department: ${department}`);
+            
+            // Remove active class from all links
+            document.querySelectorAll('.department-nav span').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Add active class to current department link
+            if (department) {
+                const activeLink = document.getElementById(`${department}-link`);
+                if (activeLink) {
+                    activeLink.classList.add('active');
+                    debugLog(`Set active link: ${department}`);
+                }
+            }
+        }
+
+        // Function to reload chatbot
+        function reloadChatbot() {
+            debugLog('Reloading chatbot...');
+            
+            // Remove existing chatbot container
+            const container = document.getElementById('docbot-container');
+            if (container) {
+                container.remove();
+                debugLog('Removed existing chatbot container');
+            }
+
+            // Remove existing script
+            const existingScript = document.querySelector('script[src*="chatbot-loader.js"]');
+            if (existingScript) {
+                existingScript.remove();
+                debugLog('Removed existing chatbot script');
+            }
+
+            // Load new script
+            const script = document.createElement('script');
+            script.src = './chatbot-loader.js?' + new Date().getTime(); // Add cache buster
+            script.onerror = (error) => handleScriptError(error);
+            document.body.appendChild(script);
+            debugLog('Added new chatbot script');
+        }
+
+        // Add click event listeners to department links
+        document.querySelectorAll('.department-nav span').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const dept = link.getAttribute('data-department');
+                changeDepartment(dept);
+            });
+        });
+
+        // Update active link on page load
+        updateActiveLink();
+
+        // Initial chatbot load
+        debugLog('Initializing page...');
+        reloadChatbot();
+    </script>
+</body>
+</html> 
