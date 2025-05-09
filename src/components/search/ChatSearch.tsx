@@ -168,6 +168,9 @@ const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
     setLoading(true);
 
     try {
+      // Get the last 5 messages for context
+      const recentMessages = messages.slice(-5);
+      
       const response = await fetch('/api/query', {
         method: 'POST',
         headers: {
@@ -177,7 +180,8 @@ const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
           query, 
           namespace: namespace || 'default',
           useRecencyBias: true,
-          resultCount: 5
+          resultCount: 5,
+          conversationHistory: recentMessages
         }),
       });
 
