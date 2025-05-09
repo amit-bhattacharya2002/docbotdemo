@@ -216,7 +216,7 @@ const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
   return (
     <div className="flex flex-col w-full h-full bg-[#ffeaea] shadow-lg">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto space-y-4 p-4 rounded-lg m-4 mr-0">
+      <div className="flex-1 overflow-y-auto space-y-4 p-4 pt-0 rounded-lg m-4 mr-0">
         {messages.length > 0 && (
           <div className="flex justify-end p-2">
             <button
