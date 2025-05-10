@@ -17,6 +17,7 @@ interface ChatSearchProps {
 export interface ChatSearchRef {
   scrollToMessage: (content: string) => void;
   setQuery: (query: string) => void;
+  clearChatHistory: () => void;
 }
 
 // Function to detect and format hyperlinks
@@ -82,6 +83,58 @@ const formatMessageWithLinks = (text: string) => {
 };
 
 const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
+  const promptCategories = {
+    "Contact Information": [
+      "How can I update my contact information?",
+      "Can I get another alumnus' contact information?",
+      "How do I change my email preferences?",
+      "How do I update my mailing address?",
+      "How do I verify my contact details?"
+    ],
+    "Transcripts & Degrees": [
+      "How do I obtain a copy of my transcript?",
+      "How can I verify my degree?",
+      "How do I update my name on my credential document?",
+      "Can I get a replacement diploma?",
+      "How do I request an official transcript?"
+    ],
+    "Campus Access": [
+      "How do I access wi-fi on campus?",
+      "Why can't I access my SFU Outlook account?",
+      "How do I get a new alumni card?",
+      "Can I use the library facilities?",
+      "How do I access campus buildings?"
+    ],
+    "Alumni Events": [
+      "How can I find out about upcoming alumni events?",
+      "How do I share my achievements with SFU?",
+      "How do I unsubscribe from Alumni communications?",
+      "How can I volunteer at alumni events?",
+      "How do I register for alumni events?"
+    ],
+    "Alumni Benefits": [
+      "How do I access the library?",
+      "What special rates or discounts are available for alumni?",
+      "How do I access alumni career services?",
+      "What health benefits are available to alumni?",
+      "How do I access alumni networking events?"
+    ]
+  };
+
+  const getInitialMessages = (): Message[] => {
+    // Get the first category and its prompts
+    const firstCategory = Object.keys(promptCategories)[0];
+    const firstPrompts = promptCategories[firstCategory as keyof typeof promptCategories];
+
+    return [{
+      type: 'bot' as const,
+      content: `Welcome to SFU DocBot! 👋 I'm here to help you with your questions about SFU Alumni Services.
+
+Here are some common questions about ${firstCategory}:`,
+      timestamp: new Date()
+    }];
+  };
+
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState<Message[]>(() => {
     // Initialize messages from localStorage
@@ -95,16 +148,17 @@ const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
           }));
         } catch (error) {
           console.error('Error parsing saved messages:', error);
-          return [];
+          return getInitialMessages();
         }
       }
     }
-    return [];
+    return getInitialMessages();
   });
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const { namespace, setNamespace } = useNamespace();
+  const [currentCategory, setCurrentCategory] = useState(Object.keys(promptCategories)[0]);
 
   useImperativeHandle(ref, () => ({
     scrollToMessage: (content: string) => {
@@ -112,14 +166,18 @@ const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
       if (messageElement) {
         messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         // Highlight the message briefly
-        messageElement.classList.add('bg-yellow-100');
+        messageElement.classList.add('bg-blue-100');
         setTimeout(() => {
-          messageElement.classList.remove('bg-yellow-100');
+          messageElement.classList.remove('bg-blue-100');
         }, 2000);
       }
     },
     setQuery: (newQuery: string) => {
       setQuery(newQuery);
+    },
+    clearChatHistory: () => {
+      setMessages(getInitialMessages());
+      localStorage.removeItem('chatHistory');
     }
   }));
 
@@ -153,6 +211,18 @@ const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
       handleSubmit(new Event('submit') as any);
     }
   }, [props.selectedQuery]);
+
+  const handlePromptClick = (prompt: string) => {
+    setQuery(prompt);
+  };
+
+  const getCurrentPrompts = () => {
+    return promptCategories[currentCategory as keyof typeof promptCategories];
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setCurrentCategory(category);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,25 +282,10 @@ const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
     }
   };
 
-  const clearChatHistory = () => {
-    setMessages([]);
-    localStorage.removeItem('chatHistory');
-  };
-
   return (
     <div className="flex flex-col w-full h-full bg-[#ffeaea] shadow-lg">
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto space-y-4 p-4 pt-0 rounded-lg m-4 mr-0">
-        {messages.length > 0 && (
-          <div className="flex justify-end p-2">
-            <button
-              onClick={clearChatHistory}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Clear Chat History
-            </button>
-          </div>
-        )}
         {messages.map((message, index) => (
           <div
             key={index}
@@ -242,7 +297,7 @@ const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
             className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} transition-colors duration-300`}
           >
             <div
-              className={`max-w-[80%] rounded-lg p-3 ${
+              className={`max-w-[85%] sm:max-w-[75%] md:max-w-[65%] rounded-lg p-2 sm:p-3 ${
                 message.type === 'user'
                   ? 'bg-[#982727] text-white rounded-br-none cursor-pointer hover:bg-[#7a1e1e]'
                   : 'bg-[#ffffff] text-gray-800 rounded-bl-none shadow'
@@ -253,12 +308,42 @@ const ChatSearch = forwardRef<ChatSearchRef, ChatSearchProps>((props, ref) => {
                 }
               }}
             >
-              <div className="text-sm whitespace-pre-wrap">
+              <div className="text-sm sm:text-base whitespace-pre-wrap">
                 {message.type === 'bot' 
                   ? formatMessageWithLinks(message.content)
                   : message.content
                 }
               </div>
+              {message.type === 'bot' && (
+                <>
+                  <div className="mt-3 space-y-1.5">
+                    {getCurrentPrompts().map((prompt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handlePromptClick(prompt)}
+                        className="block w-full text-left px-3 py-1.5 text-sm bg-[#f8f9fa] hover:bg-[#e9ecef] rounded-lg text-[#982727] transition-colors duration-200"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {Object.keys(promptCategories).map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => handleCategoryChange(category)}
+                        className={`px-2 py-0.5 text-xs rounded-full transition-colors duration-200 ${
+                          currentCategory === category
+                            ? 'bg-[#982727] text-white'
+                            : 'bg-[#f8f9fa] text-[#982727] hover:bg-[#e9ecef]'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
               <span className="text-xs opacity-70 mt-1 block">
                 {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>

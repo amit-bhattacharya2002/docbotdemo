@@ -62,9 +62,10 @@ export async function POST(req: NextRequest) {
       .map((msg: Message) => `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
       .join('\n');
 
-    // Extract the last user message before the current one
-    const userMessages = conversationHistory.filter((msg: Message) => msg.type === 'user');
-    const lastUserMessage = userMessages.length > 1 ? userMessages[userMessages.length - 2].content : '';
+    // Get the last user message from the conversation history
+    const lastUserMessage = conversationHistory
+      .filter((msg: Message) => msg.type === 'user')
+      .pop()?.content || '';
 
     // Prepend the last user message to the current question if it exists
     const disambiguatedQuestion = lastUserMessage
@@ -72,28 +73,28 @@ export async function POST(req: NextRequest) {
 Follow-up question: "${query}"`
       : query;
 
-    const prompt = `You are a helpful document assistant. Your task is to answer questions based on the provided context and conversation history.
+    const prompt = `You are a helpful document assistant. Answer questions based on context and conversation history.
 
 CONVERSATION HISTORY:
 ${formattedHistory}
 
-INSTRUCTIONS:
-1. Answer based on the information provided in the context below and the conversation history above.
-2. Maintain consistency with previous answers.
-3. If the question refers to previous context, use that information.
-4. If the context doesn't contain enough information to answer the question, try to provide a partial answer based on what you can infer from the available information.
-5. If you can't find any relevant information, say "I don't have enough information to answer this question."
-6. Be concise but comprehensive in your answer.
-7. If the context contains multiple perspectives, acknowledge them in your answer.
-8. If the question is ambiguous, clarify what you're answering before providing the answer.
-9. IMPORTANT: Always include relevant links from the context in your response. If the context contains URLs that are relevant to the answer, include them in your response. Format the links naturally within your text, for example: "You can find more information at link:" or "For detailed instructions, visit link:"  DONT ADD ANY BRACKETS OR ANYTHING ELSE TO THE LINKS OR THE TEXTS PRECEEDING THEM, OR FOLLOWING THEM. DONT ENCLOSE THE LINKS IN BRACKETS OR ANYTHING ELSE. You can add a : at the end of the text preceeding the link to make the formatting better
+GUIDELINES:
+1. Answer using context and conversation history
+2. Stay consistent with previous answers
+3. Use conversation history for context references
+4. If context is insufficient, provide partial answer
+5. If no relevant info, say "I don't have enough information to answer this question"
+6. Be concise but comprehensive
+7. Acknowledge multiple perspectives if present
+8. Clarify ambiguous questions before answering
+9. Include relevant links naturally in text (e.g., "For more info: link:")
 
-IMPORTANT:
-Whenever the user asks a question that refers to "it," "there," "that," or similarly vague pronouns or expressions, you must: Scan {${formattedHistory}} for the most recent noun or entity that matches number and semantic type. If exactly one clear antecedent exists, rewrite the question in your head using that antecedent and answer as if the user had said it explicitly. If multiple possible antecedents remain or you're not 100% certain, politely ask a single clarifying question before answering—for example: "Just to make sure—when you say 'it,' are you referring to [Entity A] or [Entity B]?" Always default to inference from {${formattedHistory}} before asking for clarification.
-
-IMPORTANT:If the user's question is vague (e.g., "How long does it take?"), assume they are referring to their most recent previous message: "${lastUserMessage}"
-
-Only ask for clarification if the reference is still ambiguous after considering the last user message.
+PRONOUN RESOLUTION:
+For vague pronouns (it, there, that):
+- Check conversation history for matching antecedents
+- If one clear match exists, use it
+- If ambiguous, ask: "Are you referring to [Entity A] or [Entity B]?"
+- For vague questions, assume reference to last message: "${lastUserMessage}"
 
 CONTEXT:
 ${contexts.join("\n---\n")}

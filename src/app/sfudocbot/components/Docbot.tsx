@@ -7,8 +7,10 @@ const Docbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [activeSection, setActiveSection] = useState<'main' | 'searchHistory' | 'about'>('main');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const chatWindowRef = useRef<HTMLDivElement>(null);
-  const chatSearchRef = useRef<{ scrollToMessage: (content: string) => void; setQuery: (query: string) => void }>(null);
+  const chatSearchRef = useRef<{ scrollToMessage: (content: string) => void; setQuery: (query: string) => void; clearChatHistory: () => void }>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -53,6 +55,22 @@ const Docbot = () => {
     chatSearchRef.current?.scrollToMessage(query);
     chatSearchRef.current?.setQuery(query);
     setShowHistory(false);
+  };
+
+  const handleClearChat = () => {
+    setShowConfirmModal(true);
+  };
+
+  const confirmClearChat = () => {
+    setIsClearing(true);
+    localStorage.removeItem('chatHistory');
+    chatSearchRef.current?.clearChatHistory();
+    setShowConfirmModal(false);
+    
+    // Reset clearing state after animation
+    setTimeout(() => {
+      setIsClearing(false);
+    }, 500);
   };
 
   const renderDropdownContent = () => {
@@ -169,6 +187,15 @@ const Docbot = () => {
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
                 </button>
+                <button
+                  onClick={handleClearChat}
+                  className={`p-1 hover:bg-[#CC0633] rounded-full transition-colors ${isClearing ? 'animate-pulse' : ''}`}
+                  title="Clear Chat History"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
               </div>
               <button
                 onClick={() => {
@@ -223,8 +250,32 @@ const Docbot = () => {
             </div>
 
             {/* Chat Content */}
-            <div className="flex-1 overflow-hidden">
+            <div className={`flex-1 overflow-hidden transition-opacity duration-500 ${isClearing ? 'opacity-50' : 'opacity-100'}`}>
               <ChatSearch ref={chatSearchRef} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold mb-4">Clear Chat History</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to clear all chat history? This action cannot be undone.</p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmClearChat}
+                className="px-4 py-2 bg-[#CC0633] text-white rounded hover:bg-[#a80529] transition-colors"
+              >
+                Clear History
+              </button>
             </div>
           </div>
         </div>
